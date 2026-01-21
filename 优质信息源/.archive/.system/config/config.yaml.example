@@ -1,0 +1,30 @@
+# 情报收集系统配置模板
+# 复制此文件为 config.yaml 并填写您的配置
+
+api:
+  # OpenAI 兼容 API 配置
+  # 支持: OpenAI, 智谱GLM, DeepSeek, Moonshot, Ollama 等
+  base_url: "https://api.openai.com/v1"  # API 端点
+  api_key: "your-api-key-here"            # API 密钥
+  model: "gpt-4o-mini"                    # 主模型
+  fallback_model: "gpt-4o-mini"           # 备用模型
+
+# 抓取设置
+fetch:
+  default_limit: 10       # 每个源默认抓取数量
+  timeout: 30             # 请求超时（秒）
+  delay_between_sources: 2 # 源之间延迟（秒）
+
+# AI 处理设置
+ai:
+  enabled: true           # 是否启用 AI 处理
+  batch_size: 5           # 批处理大小
+  max_retries: 3          # 最大重试次数
+
+# 通知设置（macOS）
+notification:
+  enabled: true           # 是否启用通知
+  sound: true             # 是否播放声音
+
+# 调试模式
+debug: false

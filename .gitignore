@@ -1,0 +1,77 @@
+# ================================
+# 个人笔记和敏感信息（不上传）
+# ================================
+
+# 个人笔记目录
+📖 读万卷书/
+读书笔记/
+精华贴拆解/
+生财精华帖/
+学习之路/
+优选提示词/
+Clippings/
+
+# 优质信息源中的个人数据
+优质信息源/文章/
+优质信息源/来源/
+优质信息源/每日汇总/
+优质信息源/精华汇总.md
+优质信息源/看板.md
+优质信息源/progress.md
+优质信息源/task_plan.md
+优质信息源/project_analysis.md
+优质信息源/.archive/文章/
+
+# ================================
+# Python 环境
+# ================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+优质信息源/.archive/.venv/
+优质信息源/.archive/venv/
+优质信息源/.archive/ENV/
+*.egg-info/
+dist/
+build/
+
+# ================================
+# 配置和数据（包含敏感信息）
+# ================================
+优质信息源/.archive/.system/config/config.yaml
+优质信息源/.archive/.system/data/*.db
+优质信息源/.archive/.system/data/*.sqlite
+优质信息源/.archive/.system/logs/*.log
+优质信息源/.archive/.system/logs/*.txt
+
+# ================================
+# 系统文件
+# ================================
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+
+# ================================
+# IDE 和编辑器
+# ================================
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.obsidian/
+.claude/
+
+# ================================
+# 临时文件和日志
+# ================================
+*.tmp
+*.temp
+*.log
+test_*.log
+优质信息源/.archive/test_glm_output.log
+优质信息源/.archive/test_glm_batch.py

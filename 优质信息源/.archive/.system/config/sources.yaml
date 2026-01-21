@@ -1,0 +1,281 @@
+# 信息源配置
+# 支持的类型: rss, webpage, hackernews, huggingface
+
+sources:
+  # === AI & 技术新闻 ===
+
+  - id: theaivalley
+    name: The AI Valley
+    type: beehiiv
+    url: https://www.theaivalley.com
+    description: AI 新闻和趋势
+    limit: 15
+
+  - id: bensbites
+    name: Ben's Bites
+    type: rss
+    url: https://www.bensbites.com
+    feed_url: https://www.bensbites.com/feed
+    description: AI 日报
+    limit: 10
+
+  - id: tldr-ai
+    name: TLDR AI
+    type: rss
+    url: https://tldr.tech/ai
+    feed_url: https://tldr.tech/rss/ai
+    description: AI 技术摘要
+    limit: 15
+
+  - id: every-to
+    name: Every.to
+    type: every
+    url: https://every.to
+    description: 技术和商业洞察
+    limit: 15
+
+  # === Substack ===
+
+  - id: nlp-news
+    name: NLP News (Elvis)
+    type: rss
+    url: https://nlp.elvissaravia.com
+    feed_url: https://nlp.elvissaravia.com/feed
+    description: NLP 和 ML 研究动态
+    limit: 10
+
+  - id: interconnects
+    name: Interconnects
+    type: rss
+    url: https://interconnects.ai
+    feed_url: https://www.interconnects.ai/feed
+    description: AI 深度分析
+    limit: 10
+
+  - id: oneusefulthing
+    name: One Useful Thing
+    type: rss
+    url: https://oneusefulthing.substack.com
+    feed_url: https://oneusefulthing.substack.com/feed
+    description: Ethan Mollick 的 AI 实践
+    limit: 10
+
+  - id: importai
+    name: Import AI
+    type: rss
+    url: https://importai.substack.com
+    feed_url: https://importai.substack.com/feed
+    description: AI 研究周报
+    limit: 10
+
+  - id: thesequence
+    name: TheSequence
+    type: rss
+    url: https://thesequence.substack.com
+    feed_url: https://thesequence.substack.com/feed
+    description: ML/AI 技术深度
+    limit: 10
+
+  - id: aiweekly
+    name: AI Weekly
+    type: rss
+    url: https://aiweekly.substack.com
+    feed_url: https://aiweekly.substack.com/feed
+    description: AI 周刊
+    limit: 10
+
+  - id: semianalysis
+    name: SemiAnalysis
+    type: rss
+    url: https://semianalysis.substack.com
+    feed_url: https://semianalysis.substack.com/feed
+    description: 半导体和 AI 硬件分析
+    limit: 10
+
+  - id: chinatalk
+    name: ChinaTalk
+    type: rss
+    url: https://chinatalk.substack.com
+    feed_url: https://chinatalk.substack.com/feed
+    description: 中国科技和政策
+    limit: 10
+
+  # === 技术博客 RSS ===
+
+  - id: openai-blog
+    name: OpenAI Blog
+    type: rss
+    url: https://openai.com/blog
+    feed_url: https://openai.com/blog/rss.xml
+    description: OpenAI 官方博客
+    limit: 10
+
+  - id: anthropic-news
+    name: Anthropic News
+    type: rss
+    url: https://www.anthropic.com
+    feed_url: https://www.anthropic.com/rss.xml
+    description: Anthropic 官方动态
+    enabled: false  # 无公开 RSS feed
+    limit: 10
+
+  - id: deepmind-blog
+    name: DeepMind Blog
+    type: rss
+    url: https://deepmind.google
+    feed_url: https://deepmind.google/blog/rss.xml
+    description: DeepMind 研究博客
+    limit: 10
+
+  - id: meta-ai
+    name: Meta AI Blog
+    type: rss
+    url: https://ai.meta.com
+    feed_url: https://ai.meta.com/blog/rss/
+    description: Meta AI 研究
+    enabled: false  # 无公开 RSS feed
+    limit: 10
+
+  - id: microsoft-research
+    name: Microsoft Research
+    type: rss
+    url: https://www.microsoft.com/en-us/research
+    feed_url: https://www.microsoft.com/en-us/research/feed/
+    description: 微软研究院
+    limit: 10
+
+  # === Hacker News ===
+
+  - id: hackernews
+    name: Hacker News
+    type: hackernews
+    url: https://news.ycombinator.com
+    story_type: top
+    min_score: 100
+    limit: 30
+    description: HN 热门技术讨论
+
+  # === 学术论文 ===
+
+  - id: huggingface-papers
+    name: HuggingFace Papers
+    type: huggingface
+    url: https://huggingface.co/papers
+    description: HuggingFace 每日论文
+    limit: 20
+
+  - id: arxiv-cs-ai
+    name: arXiv CS.AI
+    type: rss
+    url: https://arxiv.org/list/cs.AI/recent
+    feed_url: https://rss.arxiv.org/rss/cs.AI
+    description: arXiv AI 论文
+    limit: 15
+
+  - id: arxiv-cs-cl
+    name: arXiv CS.CL
+    type: rss
+    url: https://arxiv.org/list/cs.CL/recent
+    feed_url: https://rss.arxiv.org/rss/cs.CL
+    description: arXiv NLP 论文
+    limit: 15
+
+  - id: arxiv-cs-lg
+    name: arXiv CS.LG
+    type: rss
+    url: https://arxiv.org/list/cs.LG/recent
+    feed_url: https://rss.arxiv.org/rss/cs.LG
+    description: arXiv 机器学习论文
+    limit: 15
+
+  # === 产品和工具 ===
+
+  - id: decohack
+    name: DecoHack (PH今日热榜)
+    type: rss
+    url: https://decohack.com
+    feed_url: https://decohack.com/feed/
+    description: Product Hunt 每日精选中文版
+    limit: 15
+
+  # === 科技媒体 ===
+
+  - id: techcrunch-ai
+    name: TechCrunch AI
+    type: rss
+    url: https://techcrunch.com/category/artificial-intelligence/
+    feed_url: https://techcrunch.com/category/artificial-intelligence/feed/
+    description: TechCrunch AI 新闻
+    limit: 15
+
+  - id: theverge-ai
+    name: The Verge AI
+    type: rss
+    url: https://www.theverge.com/ai-artificial-intelligence
+    feed_url: https://www.theverge.com/rss/ai-artificial-intelligence/index.xml
+    description: The Verge AI 报道
+    limit: 15
+
+  - id: wired-ai
+    name: Wired AI
+    type: rss
+    url: https://www.wired.com/tag/artificial-intelligence/
+    feed_url: https://www.wired.com/feed/tag/ai/latest/rss
+    description: Wired AI 报道
+    limit: 10
+
+  - id: mittr-ai
+    name: MIT Tech Review AI
+    type: rss
+    url: https://www.technologyreview.com/topic/artificial-intelligence/
+    feed_url: https://www.technologyreview.com/topic/artificial-intelligence/feed
+    description: MIT 科技评论 AI
+    limit: 10
+
+  # === 开发者资源 ===
+
+  - id: github-trending
+    name: GitHub Trending
+    type: webpage
+    url: https://github.com/trending?since=daily
+    description: GitHub 每日趋势
+    selectors:
+      item: "article.Box-row"
+      title: "h2 a"
+      link: "h2 a"
+      summary: "p"
+    limit: 20
+
+  - id: devto
+    name: Dev.to
+    type: rss
+    url: https://dev.to
+    feed_url: https://dev.to/feed
+    description: 开发者社区
+    limit: 15
+
+  - id: hackernoon
+    name: HackerNoon
+    type: rss
+    url: https://hackernoon.com
+    feed_url: https://hackernoon.com/feed
+    description: 技术博客平台
+    limit: 10
+
+  # === 中文源 ===
+
+  - id: jiqizhixin
+    name: 机器之心
+    type: rss
+    url: https://www.jiqizhixin.com
+    feed_url: https://www.jiqizhixin.com/rss
+    description: 中文 AI 媒体
+    limit: 15
+
+  - id: infoq-ai
+    name: InfoQ AI
+    type: rss
+    url: https://www.infoq.cn/topic/AI
+    feed_url: https://www.infoq.cn/feed
+    description: InfoQ 中文站 AI 频道
+    limit: 10
