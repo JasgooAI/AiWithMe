@@ -21,15 +21,21 @@ class ObsidianWriter:
         for path in self.paths.values():
             path.mkdir(parents=True, exist_ok=True)
 
-    def _sanitize_filename(self, title: str, max_length: int = 50) -> str:
-        """清理文件名"""
-        # 移除不允许的字符
-        clean = re.sub(r'[<>:"/\\|?*\[\]#^]', '', title)
+    def _sanitize_filename(self, title: str, max_length: int = 80) -> str:
+        """清理文件名: 移除特殊字符、emoji、多余空格"""
+        # 移除 emoji (Unicode emoji 范围)
+        clean = re.sub(r'[\U00010000-\U0010ffff\u2600-\u26FF\u2700-\u27BF]', '', title)
+
+        # 移除不允许的文件名字符
+        clean = re.sub(r'[<>:"/\\|?*\[\]#^]', '', clean)
+
         # 移除多余空格
         clean = re.sub(r'\s+', ' ', clean).strip()
-        # 截断
+
+        # 截断 (增加到 80 字符)
         if len(clean) > max_length:
             clean = clean[:max_length].strip()
+
         return clean or 'untitled'
 
     def _format_keywords_as_tags(self, keywords: str) -> str:
@@ -46,15 +52,40 @@ class ObsidianWriter:
             month_dir = self.paths['articles'] / today.strftime('%Y-%m')
             month_dir.mkdir(parents=True, exist_ok=True)
 
-            # 生成文件名
-            date_prefix = today.strftime('%Y%m%d')
+            # 生成文件名 (移除日期前缀)
             title_part = self._sanitize_filename(article.title_zh or article.title)
-            filename = f"{date_prefix}-{title_part}.md"
+            filename = f"{title_part}.md"
             file_path = month_dir / filename
+
+            # 处理文件名冲突
+            counter = 1
+            while file_path.exists():
+                filename = f"{title_part}-{counter}.md"
+                file_path = month_dir / filename
+                counter += 1
 
             # 生成内容
             title_zh = article.title_zh or article.title
-            title_original = article.title if article.title_zh else ""
+            # 只有当翻译后标题与原标题不同时，才保存原标题
+            # 这样可以区分：英文标题被翻译 vs 中文标题保持原样
+            title_original = article.title if (article.title_zh and article.title_zh != article.title) else ""
+
+            # 生成标签（分类 + 关键词，用于图谱连接）
+            tag_links = []
+            category = article.category or '其他'
+            if category:
+                tag_links.append(f'  - {category}')
+            # 添加关键词作为 tags（最多3个）
+            if article.keywords:
+                keywords = [kw.strip() for kw in article.keywords.split(',') if kw.strip()]
+                for kw in keywords[:3]:  # 限制最多3个关键词
+                    # 清理关键词中的特殊字符
+                    clean_kw = kw.replace('#', '').replace('[', '').replace(']', '').strip()
+                    if clean_kw and clean_kw != category:  # 避免与分类重复
+                        tag_links.append(f'  - {clean_kw}')
+            tags_yaml = '\ntags:\n' + '\n'.join(tag_links) if tag_links else ''
+
+            # hashtag 格式的关键词(保留在正文中)
             tags = self._format_keywords_as_tags(article.keywords)
             summary = article.ai_summary or article.summary or ""
 
@@ -64,8 +95,8 @@ title_original: "{title_original}"
 url: {article.url}
 source: {article.source_id}
 source_name: {article.source_name}
-category: {article.category or '其他'}
-date: {today.strftime('%Y-%m-%d')}
+category: {category}
+date: {today.strftime('%Y-%m-%d')}{tags_yaml}
 ---
 
 # {title_zh}
@@ -87,6 +118,28 @@ date: {today.strftime('%Y-%m-%d')}
 
 ## 阅读笔记
 
+
+
+---
+
+## 相关内容
+
+- 来源: [[{article.source_id}]]
+- 分类: [[{category}]]
+- 时间: [[{today.strftime('%Y-%m')}]]
+
+### 相似主题文章
+
+```dataview
+TABLE WITHOUT ID
+  link(file.link, title) as "标题",
+  source_name as "来源",
+  date as "日期"
+FROM "优质信息源/文章"
+WHERE category = "{category}" AND file.name != this.file.name
+SORT date DESC
+LIMIT 5
+```
 
 """
             file_path.write_text(content, encoding='utf-8')
@@ -113,8 +166,8 @@ date: {today.strftime('%Y-%m-%d')}
             existing_links = set()
             if file_path.exists():
                 existing_content = file_path.read_text(encoding='utf-8')
-                # 提取已有的文章链接 [[20260120-xxx|yyy]]
-                existing_links = set(re.findall(r'\[\[(' + date_prefix + r'-[^\]|]+)', existing_content))
+                # 提取已有的文章链接 [[xxx|yyy]]
+                existing_links = set(re.findall(r'\[\[([^\]|]+)', existing_content))
                 logger.info(f"已有 {len(existing_links)} 篇文章在每日汇总中")
 
             # 过滤掉已存在的文章
@@ -122,7 +175,7 @@ date: {today.strftime('%Y-%m-%d')}
             for article in articles:
                 title_zh = article.title_zh or article.title
                 safe_title = self._sanitize_filename(title_zh)
-                link_name = f"{date_prefix}-{safe_title}"
+                link_name = safe_title  # 移除日期前缀
                 if link_name not in existing_links:
                     new_articles.append(article)
 
@@ -136,7 +189,7 @@ date: {today.strftime('%Y-%m-%d')}
             for article in new_articles:
                 title_zh = article.title_zh or article.title
                 safe_title = self._sanitize_filename(title_zh)
-                link_name = f"{date_prefix}-{safe_title}"
+                link_name = safe_title  # 移除日期前缀
                 if link_name not in [a['link_name'] for a in all_articles]:
                     all_articles.append({
                         'link_name': link_name,
@@ -244,13 +297,13 @@ date: {today.strftime('%Y-%m-%d')}
     def _load_today_articles(self, date: datetime) -> list[dict]:
         """从文章目录加载今天的所有文章"""
         articles = []
-        date_prefix = date.strftime('%Y%m%d')
         month_dir = self.paths['articles'] / date.strftime('%Y-%m')
 
         if not month_dir.exists():
             return articles
 
-        for file_path in month_dir.glob(f"{date_prefix}-*.md"):
+        # 不再按文件名前缀过滤，而是通过 frontmatter 的 date 字段
+        for file_path in month_dir.glob("*.md"):
             try:
                 content = file_path.read_text(encoding='utf-8')
                 # 解析 frontmatter
@@ -259,6 +312,11 @@ date: {today.strftime('%Y-%m-%d')}
                     if len(parts) >= 3:
                         import yaml
                         meta = yaml.safe_load(parts[1])
+
+                        # 检查日期是否为今天
+                        article_date = meta.get('date', '')
+                        if article_date != date.strftime('%Y-%m-%d'):
+                            continue  # 跳过非今天的文章
 
                         link_name = file_path.stem
                         articles.append({

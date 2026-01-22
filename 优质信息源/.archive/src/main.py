@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""情报收集系统主程序"""
+"""情报收集系统主程序 - 带可视化进度"""
 import argparse
 import sys
 import time
@@ -36,6 +36,50 @@ FETCHER_MAP = {
 }
 
 
+class FetchProgress:
+    """抓取进度显示"""
+
+    def __init__(self, total_sources: int):
+        self.total_sources = total_sources
+        self.current_source = 0
+        self.start_time = time.time()
+        self.source_stats = {}  # {source_id: {"new": x, "total": y}}
+
+    def start_source(self, source_id: str, source_name: str):
+        """开始抓取某个源"""
+        self.current_source += 1
+        elapsed = time.time() - self.start_time
+
+        # 预估剩余时间
+        if self.current_source > 1:
+            avg_time = elapsed / (self.current_source - 1)
+            remaining = avg_time * (self.total_sources - self.current_source + 1)
+            time_str = f"{int(remaining)}s" if remaining < 60 else f"{int(remaining//60)}m{int(remaining%60)}s"
+        else:
+            time_str = "计算中..."
+
+        # 进度条
+        bar_len = 20
+        filled = int(bar_len * self.current_source / self.total_sources)
+        bar = "█" * filled + "░" * (bar_len - filled)
+
+        print(f"\r🔄 [{bar}] {self.current_source}/{self.total_sources} | 剩余:{time_str} | {source_name:<20}", end="", flush=True)
+
+    def finish_source(self, source_id: str, new_count: int, total_count: int):
+        """完成某个源的抓取"""
+        self.source_stats[source_id] = {"new": new_count, "total": total_count}
+        # 如果有新文章，显示一行
+        if new_count > 0:
+            print(f"\r✓ {source_id}: {new_count} 篇新文章" + " " * 40)
+
+    def summary(self):
+        """显示抓取汇总"""
+        total_new = sum(s["new"] for s in self.source_stats.values())
+        elapsed = time.time() - self.start_time
+        print()
+        print(f"📥 抓取完成: {self.total_sources} 个源, {total_new} 篇新文章, 耗时 {elapsed:.1f}s")
+
+
 def get_fetcher(source_config: dict):
     """根据源类型获取对应的抓取器"""
     source_type = source_config.get('type', 'rss')
@@ -54,7 +98,7 @@ def fetch_source(source_config: dict) -> list[Article]:
         # 过滤已存在的文章
         new_articles = [a for a in articles if db.is_new_article(a.url)]
 
-        logger.info(f"[{source_id}] 新文章: {len(new_articles)}/{len(articles)}")
+        logger.debug(f"[{source_id}] 新文章: {len(new_articles)}/{len(articles)}")
         db.log_fetch(source_id, 'success', len(new_articles))
 
         return new_articles
@@ -70,14 +114,14 @@ def process_and_save_articles(articles: list[Article]) -> int:
     if not articles:
         return 0
 
-    # AI 处理
+    # AI 处理（带进度显示）
     if config.get('ai.enabled', True):
-        logger.info(f"开始 AI 处理 {len(articles)} 篇文章...")
         articles = ai_processor.process_batch(articles)
 
     # 保存到数据库和 Obsidian
+    print(f"\n💾 保存文章...")
     saved_count = 0
-    for article in articles:
+    for i, article in enumerate(articles):
         # 写入 Obsidian 文件
         file_path = obsidian_writer.write_article(article)
 
@@ -89,19 +133,25 @@ def process_and_save_articles(articles: list[Article]) -> int:
         if db.add_article(article_data):
             saved_count += 1
 
+        # 显示保存进度
+        print(f"\r💾 保存进度: {i+1}/{len(articles)}", end="", flush=True)
+
+    print(f"\r💾 已保存 {saved_count} 篇文章" + " " * 20)
     return saved_count
 
 
 def run_collection(source_ids: Optional[list[str]] = None):
     """运行收集任务"""
     start_time = time.time()
-    logger.info("=" * 50)
-    logger.info("开始情报收集...")
-    logger.info("=" * 50)
+
+    print()
+    print("=" * 60)
+    print(f"🚀 情报收集系统启动 - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print("=" * 60)
 
     sources = config.sources
     if not sources:
-        logger.error("未配置信息源，请检查 sources.yaml")
+        print("❌ 未配置信息源，请检查 sources.yaml")
         notify_error("未配置信息源")
         return
 
@@ -109,68 +159,92 @@ def run_collection(source_ids: Optional[list[str]] = None):
     if source_ids:
         sources = [s for s in sources if s.get('id') in source_ids]
         if not sources:
-            logger.error(f"未找到指定的信息源: {source_ids}")
+            print(f"❌ 未找到指定的信息源: {source_ids}")
             return
 
-    logger.info(f"准备抓取 {len(sources)} 个信息源")
+    print(f"📡 准备抓取 {len(sources)} 个信息源")
+    print()
 
-    all_processed_articles = []
+    # 阶段1: 抓取
+    print("【阶段 1/3】抓取文章")
+    print("-" * 40)
+
+    progress = FetchProgress(len(sources))
+    all_new_articles = []
     delay = config.get('fetch.delay_between_sources', 2)
 
     for i, source_config in enumerate(sources):
         source_id = source_config.get('id', 'unknown')
-        logger.info(f"[{i + 1}/{len(sources)}] 抓取 {source_id}...")
+        source_name = source_config.get('name', source_id)
+
+        progress.start_source(source_id, source_name)
 
         new_articles = fetch_source(source_config)
+        progress.finish_source(source_id, len(new_articles), len(new_articles))
 
-        # 立即处理并保存当前源的新文章
-        if new_articles:
-            saved_count = process_and_save_articles(new_articles)
-            if saved_count > 0:
-                all_processed_articles.extend(new_articles)
-                logger.info(f"[{source_id}] 已保存 {saved_count} 篇文章")
+        all_new_articles.extend(new_articles)
 
         # 源之间的延迟
         if i < len(sources) - 1 and delay > 0:
             time.sleep(delay)
 
-    logger.info(f"抓取完成，共 {len(all_processed_articles)} 篇新文章")
+    progress.summary()
 
-    # 生成每日汇总和索引
-    if all_processed_articles:
-        # 生成每日汇总
-        obsidian_writer.write_daily_summary(all_processed_articles)
+    if not all_new_articles:
+        print("\n📭 没有新文章")
+        elapsed = time.time() - start_time
+        print(f"\n✅ 完成，耗时 {elapsed:.1f}s")
+        return
 
-        # 更新信息源索引
+    # 阶段2: AI处理和保存
+    print()
+    print("【阶段 2/3】AI 处理 & 保存")
+    print("-" * 40)
+
+    saved_count = process_and_save_articles(all_new_articles)
+
+    # 阶段3: 生成汇总
+    print()
+    print("【阶段 3/3】生成汇总")
+    print("-" * 40)
+
+    if saved_count > 0:
+        print("📊 生成每日汇总...")
+        obsidian_writer.write_daily_summary(all_new_articles)
+
+        print("📚 更新信息源索引...")
         obsidian_writer.write_source_index(sources)
 
-    # 更新精华汇总（使用 dataview 动态查询，无需传入文章列表）
+    print("⭐ 更新精华汇总...")
     obsidian_writer.update_favorites()
 
     # 统计信息
     elapsed = time.time() - start_time
     stats = db.get_stats()
-    logger.info("=" * 50)
-    logger.info(f"收集完成！耗时: {elapsed:.1f}秒")
-    logger.info(f"今日新增: {len(all_processed_articles)} | 总计: {stats['total']} | 未读: {stats['unread']}")
-    logger.info("=" * 50)
+
+    print()
+    print("=" * 60)
+    print(f"✅ 收集完成！")
+    print(f"   新增: {saved_count} 篇 | 总计: {stats['total']} 篇 | 耗时: {elapsed:.1f}s")
+    print("=" * 60)
 
     # 发送通知
     if config.get('notification.enabled', True):
-        notify_completion(len(all_processed_articles), len(sources))
+        notify_completion(saved_count, len(sources))
 
 
 def update_favorites():
     """更新精华汇总"""
-    logger.info("更新精华汇总...")
+    print("⭐ 更新精华汇总...")
     obsidian_writer.update_favorites()
-    logger.info("精华汇总已更新（使用 dataview 动态显示精选文章）")
+    print("✅ 精华汇总已更新")
 
 
 def show_stats():
     """显示统计信息"""
     stats = db.get_stats()
-    print("\n📊 情报收集统计")
+    print()
+    print("📊 情报收集统计")
     print("=" * 40)
     print(f"总文章数: {stats['total']}")
     print(f"已读: {stats['read']}")
@@ -205,10 +279,11 @@ def main():
         else:
             run_collection(args.sources)
     except KeyboardInterrupt:
-        logger.info("用户中断")
+        print("\n\n⚠️ 用户中断")
         sys.exit(0)
     except Exception as e:
         logger.error(f"运行错误: {e}", exc_info=True)
+        print(f"\n❌ 错误: {e}")
         notify_error(str(e)[:100])
         sys.exit(1)
 

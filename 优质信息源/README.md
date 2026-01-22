@@ -6,6 +6,8 @@
 
 - **多源聚合**：支持 RSS、Hacker News、HuggingFace Papers、网页抓取等多种信息源
 - **AI 处理**：自动翻译标题、生成中文摘要、提取关键词、智能分类
+- **多 API 切换**：支持配置多个 AI 提供商，限流时自动切换备用 API
+- **可视化进度**：实时显示抓取和处理进度、预计剩余时间
 - **Obsidian 集成**：生成带 frontmatter 的 Markdown 文件，支持 Dataview 查询
 - **智能去重**：SQLite 数据库记录已抓取文章，避免重复
 - **定时运行**：支持 macOS launchd 定时任务
@@ -313,8 +315,31 @@ FETCHER_MAP = {
 
 系统支持：
 - 自动重试（3次）
-- 备用模型切换
-- 优雅降级（跳过 AI 处理）
+- **多 API 提供商自动切换**（限流时自动切换到备用 API）
+- 冷却机制（限流后 5 分钟重试）
+- 优雅降级（所有 API 不可用时跳过 AI 处理）
+
+配置多个 API 提供商：
+
+```yaml
+api:
+  # 主 API
+  base_url: "https://open.bigmodel.cn/api/paas/v4"
+  api_key: "your-key"
+  model: "glm-4.7"
+
+  # 备用 API 列表（按顺序尝试）
+  backup_providers:
+    - name: "DeepSeek"
+      base_url: "https://api.deepseek.com/v1"
+      api_key: "your-deepseek-key"
+      model: "deepseek-chat"
+
+    - name: "本地LLM"
+      base_url: "http://127.0.0.1:8080/v1"
+      api_key: "local-key"
+      model: "llama3"
+```
 
 ### Q: 如何禁用某个信息源？
 
